@@ -3,12 +3,12 @@ const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
 
 // Disable right-click context menu
-document.oncontextmenu = function () {
-    return false;
-}
+document.oncontextmenu = () => false;
+
+var socket = io.connect('http://localhost:5000');
 
 // Storing all drawn strokes and undo/redo stacks
-const drawings = [];
+let drawings = [];
 const undoStack = [];
 let currentStroke = [];
 
@@ -89,7 +89,8 @@ function onMouseUp() {
     leftMouseDown = false;
     rightMouseDown = false;
     if (currentStroke.length > 0) {
-        drawings.push(currentStroke);
+        drawings.push([...currentStroke]); // Store deep copy of stroke
+        emitDrawingMessages(drawings);
         undoStack.length = 0; // Clear redo stack on new action
     }
 }
@@ -123,6 +124,7 @@ function drawLine(x0, y0, x1, y1) {
 function undo() {
     if (drawings.length > 0) {
         undoStack.push(drawings.pop());
+        emitDrawingMessages(drawings);
         redrawCanvas();
     }
 }
@@ -131,6 +133,7 @@ function undo() {
 function redo() {
     if (undoStack.length > 0) {
         drawings.push(undoStack.pop());
+        emitDrawingMessages(drawings);
         redrawCanvas();
     }
 }
@@ -144,5 +147,27 @@ document.addEventListener('keydown', function (event) {
     if (event.ctrlKey && event.key === 'y') {
         event.preventDefault();
         redo();
+    }
+});
+
+socket.on('drawing', function(receivedDrawings) {
+    console.log('New drawings received:', receivedDrawings);
+
+    if (Array.isArray(receivedDrawings)) {
+        drawings = JSON.parse(JSON.stringify(receivedDrawings)); // Deep copy
+        redrawCanvas();
+    }
+});
+
+function emitDrawingMessages(drawings) {
+    socket.emit('drawings have been changed', drawings);
+}
+
+socket.on('new connections established', function(receivedDrawings) {
+    console.log('New drawings received:', receivedDrawings);
+
+    if (Array.isArray(receivedDrawings)) {
+        drawings = JSON.parse(JSON.stringify(receivedDrawings)); // Deep copy
+        redrawCanvas();
     }
 });

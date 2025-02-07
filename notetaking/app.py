@@ -11,11 +11,12 @@ def index():
 
 @socketio.on('connect')
 def handle_connections(data):
-    emit('new connections established', drawings)
+    emit("drawing", drawings)
 
 @socketio.on('drawings have been changed')
 def handle_drawing(new_drawings):
-    drawings = new_drawings
+    global drawings
+    drawings = new_drawings.copy()
     print("Received drawing data:", new_drawings)
     emit('drawing', new_drawings, broadcast=True, include_self=False)
 

@@ -5,7 +5,7 @@ const context = canvas.getContext("2d");
 // Disable right-click context menu
 document.oncontextmenu = () => false;
 
-var socket = io.connect('http://localhost:5000');
+var socket = io.connect('http://192.168.0.117:5000');
 
 // Storing all drawn strokes and undo/redo stacks
 let drawings = [];

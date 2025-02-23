@@ -5,8 +5,8 @@ const context = canvas.getContext("2d");
 // Disable right-click context menu
 document.oncontextmenu = () => false;
 
-var socket = io.connect('http://192.168.0.117:5000');
-
+var socket = io.connect('http://localhost:5000');
+let roomName = prompt("Enter Room Name:");
 // Storing all drawn strokes and undo/redo stacks
 let drawings = [];
 const undoStack = [];
@@ -150,6 +150,10 @@ document.addEventListener('keydown', function (event) {
     }
 });
 
+socket.on('connect', () => {
+    socket.emit('join_room', { room: roomName });
+});
+
 socket.on('drawing', function(receivedDrawings) {
     console.log('New drawings received:', receivedDrawings);
 
@@ -160,7 +164,7 @@ socket.on('drawing', function(receivedDrawings) {
 });
 
 function emitDrawingMessages(drawings) {
-    socket.emit('drawings have been changed', drawings);
+    socket.emit('drawings have been changed', {room : roomName, drawings: drawings});
 }
 
 socket.on('new connections established', function(receivedDrawings) {

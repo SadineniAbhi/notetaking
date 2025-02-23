@@ -1,24 +1,30 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
+from collections import defaultdict
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
-drawings = []
+drawings_dict = defaultdict(list)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@socketio.on('connect')
+@socketio.on('join_room')
 def handle_connections(data):
-    emit("drawing", drawings)
+    global drawings_dict
+    room = data.get('room')
+    join_room(room)
+    emit("drawing", drawings_dict[room])
 
 @socketio.on('drawings have been changed')
-def handle_drawing(new_drawings):
-    global drawings
-    drawings = new_drawings.copy()
-    print("Received drawing data:", new_drawings)
-    emit('drawing', new_drawings, broadcast=True, include_self=False)
+def handle_drawing(data):
+    global drawings_dict
+    room = data.get('room')
+    drawings = data.get('drawings')
+    drawings_dict[room] = drawings.copy()
+    print("Received drawing data:", drawings)
+    emit('drawing', drawings, to=room, include_self=False)
 
 
 
